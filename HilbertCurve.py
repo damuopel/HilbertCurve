@@ -1,35 +1,65 @@
-from turtle import *
 import numpy as np
-from math import floor
-WIDTH, HEIGHT = 400, 400
+import matplotlib.pyplot as plt
+import sys
+import gif
+from os import getcwd, path
 
-l = 1 # Level (>=1)
-verts = 4
-nx = 2**l
-ny = 2**l
-h = WIDTH//nx # Both sides have the same length
-x = np.linspace(h/2,h*(nx-1/2),nx)
-y = np.linspace(h/2,h*(ny-1/2),ny)
-x, y = np.meshgrid(x,y)
-xy = np.array([x.flatten(),y.flatten()])
-n1 = np.array([i+floor(i/nx) for i in range((nx-1)*(ny-1))])
-n2 = n1 + 1
-n3 = n2 + nx
-n4 = n1 + nx
-Topology = np.array([n1,n2,n3,n4])
+def hilbert(i):
+    index = i & 3
+    points = np.array([[0,0],[0,1],[1,1],[1,0]])
+    v = points[index]
+    for iOrder in range(1,order):
+        i = i >> 2
+        index = i & 3
+        l = 2**iOrder
+        if index == 0:
+            temp = v[0]
+            v[0] = v[1]
+            v[1] = temp
+        elif index == 1:
+            v[1] += l
+        elif index == 2:
+            v[0] += l
+            v[1] += l
+        elif index == 3:
+            temp = l - 1 - v[0]
+            v[0] = l - 1 - v[1]
+            v[1] = temp
+            v[0] += l
+    return v
 
-# Setup Turtle
-screen = Screen()
-screen.setup(WIDTH, HEIGHT)
-hideturtle()
-speed(1)
-# Locate Turtle in origin
-penup()
-goto(xy[0,0]-WIDTH/2, xy[1,0]-HEIGHT/2)
-pendown()
+@gif.frame
+def plot(i):
+    plt.figure(frameon='False')    
+    plt.imshow(background)
+    plt.plot(curve[:i,0],curve[:i,1],'w')
+    plt.axis('off')
+    
+if __name__ == '__main__':
+    defaultInputs = 1
+    width, heigth = 512, 512
+    background = np.zeros((width,heigth,3))
 
-for i in range(0,(nx-1)*(ny-1)):
-    Verts = Topology[:,i]
-    for j in range(0,verts):
-          coords = xy[:,Verts[j]] 
-          goto(int(coords[0]-WIDTH/2),int(coords[1]-HEIGHT/2))
+    if len(sys.argv)-1 == defaultInputs:
+        order = int(sys.argv[1])
+    else:
+        order = 1
+        
+    N = 2**order
+    total = N*N # 2D
+    l = width / N # or height
+    curve = np.zeros((total,2))
+    frames = []
+    for i in range(0,total):
+        curve[i] = hilbert(i)
+        curve[i] = curve[i]*l
+        curve[i] += l/2
+        frames.append(plot(i))
+        
+    gif.save(frames,path.join(getcwd(),'Hilbert.gif'),duration=50)
+        
+    
+    
+        
+    
+        
